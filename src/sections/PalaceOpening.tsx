@@ -1,6 +1,7 @@
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import CouplePhoto from "../components/CouplePhoto";
 import { weddingDetails } from "../config/weddingDetails";
 import "./PalaceOpening.css";
 
@@ -67,10 +68,50 @@ type PalaceOpeningProps = {
 
 export default function PalaceOpening({ onStartMusic }: PalaceOpeningProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const namesRevealedRef = useRef(false);
+  const musicStartRequestedRef = useRef(false);
 
   const [started, setStarted] = useState(false);
   const [showNames, setShowNames] = useState(false);
+  const [hasScrolled, setHasScrolled] = useState(false);
+  const [videoFinished, setVideoFinished] = useState(false);
+  const [namesAnimationFinished, setNamesAnimationFinished] = useState(false);
 
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 24) setHasScrolled(true);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    if (
+      videoFinished &&
+      namesAnimationFinished &&
+      !musicStartRequestedRef.current
+    ) {
+      musicStartRequestedRef.current = true;
+      onStartMusic?.();
+    }
+  }, [namesAnimationFinished, onStartMusic, videoFinished]);
+
+  const revealNamesNearEnd = () => {
+    const video = videoRef.current;
+    if (
+      !video ||
+      namesRevealedRef.current ||
+      !Number.isFinite(video.duration) ||
+      video.duration <= 0 ||
+      video.duration - video.currentTime > 1.7
+    ) {
+      return;
+    }
+
+    namesRevealedRef.current = true;
+    setShowNames(true);
+  };
 
   const handleEnter = async () => {
     const video = videoRef.current;
@@ -82,9 +123,12 @@ export default function PalaceOpening({ onStartMusic }: PalaceOpeningProps) {
 
     try {
       playBell();
-      onStartMusic?.();
       setStarted(true);
       setShowNames(false);
+      setVideoFinished(false);
+      setNamesAnimationFinished(false);
+      musicStartRequestedRef.current = false;
+      namesRevealedRef.current = false;
 
       video.currentTime = 0;
       video.muted = false;
@@ -119,7 +163,15 @@ export default function PalaceOpening({ onStartMusic }: PalaceOpeningProps) {
             videoRef.current.playbackRate = 0.75;
           }
         }}
-        onEnded={() => setShowNames(true)}
+        onDurationChange={revealNamesNearEnd}
+        onTimeUpdate={revealNamesNearEnd}
+        onEnded={() => {
+          setVideoFinished(true);
+          if (!namesRevealedRef.current) {
+            namesRevealedRef.current = true;
+            setShowNames(true);
+          }
+        }}
         onError={(event) => {
           const video = event.currentTarget;
           console.error("Palace video failed to load or decode:", {
@@ -132,6 +184,9 @@ export default function PalaceOpening({ onStartMusic }: PalaceOpeningProps) {
           });
           setStarted(false);
           setShowNames(false);
+          setVideoFinished(false);
+          setNamesAnimationFinished(false);
+          namesRevealedRef.current = false;
         }}
       >
         <source
@@ -206,22 +261,44 @@ export default function PalaceOpening({ onStartMusic }: PalaceOpeningProps) {
         {showNames && (
           <motion.div
             className="couple-reveal"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 2 }}
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }}
           >
+            <CouplePhoto
+              src={weddingDetails.photographs.romantic}
+              label="Kajal & Shubham — a romantic portrait"
+              className="palace-couple-photo"
+            />
             <motion.h1
               className="couple-names"
-              initial={{ clipPath: "inset(-20% 100% -20% 0)" }}
-              animate={{ clipPath: "inset(-20% 0% -20% 0)" }}
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{
-                duration: 3.5,
-                ease: "easeInOut",
-                delay: 0.6,
+                duration: 1.1,
+                ease: [0.22, 1, 0.36, 1],
+                delay: 0.2,
               }}
+              onAnimationComplete={() => setNamesAnimationFinished(true)}
             >
               {weddingDetails.bride} & {weddingDetails.groom}
             </motion.h1>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showNames && !hasScrolled && (
+          <motion.div
+            className="palace-scroll-hint"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={{ duration: 0.7, delay: 0.45 }}
+            aria-hidden="true"
+          >
+            <span className="palace-scroll-arrow">↓</span>
+            <span className="palace-scroll-hint-text">SCROLL TO EXPLORE</span>
           </motion.div>
         )}
       </AnimatePresence>

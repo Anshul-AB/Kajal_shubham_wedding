@@ -1,0 +1,224 @@
+.rsvp-section {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: clamp(66px, 10vw, 112px) 20px clamp(90px, 12vw, 130px);
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(199, 164, 119, 0.21), transparent 44%),
+    linear-gradient(145deg, #21151f, #503845 52%, #21151f);
+  color: #faf5f0;
+  text-align: center;
+}
+
+.rsvp-ornament {
+  margin-bottom: 13px;
+  color: #e2c696;
+}
+
+.rsvp-eyebrow {
+  color: #e2c696;
+  font-family: var(--font-royal);
+  font-size: 9px;
+  letter-spacing: 3px;
+}
+
+.rsvp-section h2 {
+  margin: 16px 0 0;
+  color: #faf5f0;
+  font-family: var(--font-heading);
+  font-size: clamp(35px, 8vw, 62px);
+  font-weight: 400;
+}
+
+.rsvp-intro {
+  margin-top: 12px;
+  color: #e3d4ce;
+  font-family: var(--font-heading);
+  font-size: clamp(18px, 4vw, 23px);
+  font-style: italic;
+}
+
+.rsvp-form {
+  display: grid;
+  width: min(100%, 540px);
+  gap: 18px;
+  margin-top: 32px;
+  text-align: left;
+}
+
+.rsvp-field {
+  display: grid;
+  gap: 7px;
+  color: #f0dfc1;
+  font-family: var(--font-royal);
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+
+.rsvp-field i,
+.rsvp-attendance legend i,
+.rsvp-celebrations legend i {
+  color: #e2c696;
+  font-style: normal;
+}
+
+.rsvp-field input {
+  width: 100%;
+  min-height: 48px;
+  padding: 11px 13px;
+  border: 1px solid rgba(226, 198, 150, 0.5);
+  border-radius: 2px;
+  outline: none;
+  background: rgba(250, 245, 240, 0.08);
+  color: #fffaf1;
+  font: 16px var(--font-body);
+}
+
+.rsvp-field input:focus-visible {
+  border-color: #e2c696;
+  box-shadow: 0 0 0 3px rgba(226, 198, 150, 0.16);
+}
+
+.rsvp-field input::placeholder {
+  color: rgba(250, 245, 240, 0.48);
+}
+
+.rsvp-field small {
+  color: rgba(250, 245, 240, 0.66);
+  font-family: var(--font-body);
+  font-size: 12px;
+  letter-spacing: 0;
+}
+
+.rsvp-attendance,
+.rsvp-celebrations {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.rsvp-attendance legend,
+.rsvp-celebrations legend {
+  margin-bottom: 7px;
+  color: #f0dfc1;
+  font-family: var(--font-royal);
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+
+.rsvp-attendance label,
+.rsvp-celebrations label {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 10px;
+  color: #faf5f0;
+  font-family: var(--font-heading);
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.rsvp-attendance input,
+.rsvp-celebrations input {
+  width: 19px;
+  height: 19px;
+  accent-color: #c7a477;
+}
+
+.rsvp-celebrations > div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 14px;
+}
+
+.rsvp-message {
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(226, 198, 150, 0.34);
+  font-family: var(--font-heading);
+  font-size: 17px;
+  line-height: 1.4;
+}
+
+.rsvp-message--error {
+  color: #ffe1d7;
+  border-color: rgba(231, 151, 129, 0.56);
+  background: rgba(130, 53, 47, 0.25);
+}
+
+.rsvp-message--success {
+  color: #f9e7bd;
+  background: rgba(199, 164, 119, 0.12);
+  text-align: center;
+}
+
+.rsvp-submit {
+  display: flex;
+  min-height: 54px;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border: 1px solid #d5b984;
+  border-radius: 2px;
+  background: linear-gradient(110deg, #9e7950, #c6a575 50%, #9e7950);
+  background-size: 200% 100%;
+  color: #271a22;
+  cursor: pointer;
+  font-family: var(--font-royal);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  transition:
+    background-position 500ms ease,
+    transform 220ms ease,
+    opacity 220ms ease;
+}
+
+.rsvp-submit:hover:not(:disabled) {
+  background-position: 100% 0;
+  transform: translateY(-2px);
+}
+
+.rsvp-submit:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.rsvp-loading-spinner {
+  display: inline-block;
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgba(250, 245, 240, 0.38);
+  border-top-color: #faf5f0;
+  border-radius: 50%;
+  animation: rsvpSpinner 700ms linear infinite;
+}
+
+@keyframes rsvpSpinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.rsvp-whatsapp {
+  margin-top: 26px;
+  color: #e3d4ce;
+  font-family: var(--font-heading);
+  font-size: 17px;
+  text-decoration-color: rgba(227, 212, 206, 0.5);
+  text-underline-offset: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rsvp-submit {
+    transition: none;
+  }
+
+  .rsvp-loading-spinner {
+    animation-duration: 1.4s;
+  }
+}

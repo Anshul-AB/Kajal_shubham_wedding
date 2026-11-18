@@ -1,14 +1,18 @@
 import {
   forwardRef,
   useCallback,
+  useEffect,
   useImperativeHandle,
   useRef,
   useState,
 } from "react";
 import "./BackgroundMusic.css";
 
-const MUSIC_PATH = "/audio/wedding-background.mp3";
+const MUSIC_PATH = "/assets/audio/wedding%20audio.mp3";
+const EXPECTED_PUBLIC_PATH = "public/assets/audio/wedding audio.mp3";
 const MUTE_PREFERENCE_KEY = "wedding-music-muted";
+const BACKGROUND_MUSIC_VOLUME = 0.2;
+const FADE_IN_DURATION_MS = 3000;
 
 export type BackgroundMusicHandle = {
   start: () => void;
@@ -28,24 +32,74 @@ const BackgroundMusic = forwardRef<BackgroundMusicHandle>(function BackgroundMus
   ref,
 ) {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const fadeTimerRef = useRef<number | null>(null);
+  const startPendingRef = useRef(false);
+  const hasStartedRef = useRef(false);
   const [isVisible, setIsVisible] = useState(false);
   const [isMuted, setIsMuted] = useState(getInitialMutedPreference);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [playbackBlocked, setPlaybackBlocked] = useState(false);
   const [audioUnavailable, setAudioUnavailable] = useState(false);
+
+  useEffect(
+    () => () => {
+      if (fadeTimerRef.current !== null) {
+        window.clearInterval(fadeTimerRef.current);
+      }
+    },
+    [],
+  );
+
+  const fadeIn = useCallback((audio: HTMLAudioElement) => {
+    if (fadeTimerRef.current !== null) {
+      window.clearInterval(fadeTimerRef.current);
+    }
+
+    const startedAt = performance.now();
+    fadeTimerRef.current = window.setInterval(() => {
+      const progress = Math.min(
+        (performance.now() - startedAt) / FADE_IN_DURATION_MS,
+        1,
+      );
+      audio.volume = BACKGROUND_MUSIC_VOLUME * progress;
+
+      if (progress === 1 && fadeTimerRef.current !== null) {
+        window.clearInterval(fadeTimerRef.current);
+        fadeTimerRef.current = null;
+      }
+    }, 50);
+  }, []);
 
   const start = useCallback(() => {
     setIsVisible(true);
     const audio = audioRef.current;
-    if (!audio || audioUnavailable) return;
+    if (!audio || audioUnavailable || startPendingRef.current || !audio.paused) {
+      return;
+    }
 
+    const shouldFadeIn = !hasStartedRef.current;
+    if (shouldFadeIn) audio.volume = 0;
     audio.muted = isMuted;
-    void audio.play().catch((error: unknown) => {
-      console.error("Background music playback failed:", {
-        source: audio.currentSrc || MUSIC_PATH,
-        error,
+    startPendingRef.current = true;
+    void audio
+      .play()
+      .then(() => {
+        startPendingRef.current = false;
+        setPlaybackBlocked(false);
+        if (shouldFadeIn) {
+          hasStartedRef.current = true;
+          fadeIn(audio);
+        }
+      })
+      .catch((error: unknown) => {
+        startPendingRef.current = false;
+        setPlaybackBlocked(true);
+        console.warn("Background music playback needs user interaction:", {
+          source: audio.currentSrc || MUSIC_PATH,
+          error,
+        });
       });
-    });
-  }, [audioUnavailable, isMuted]);
+  }, [audioUnavailable, fadeIn, isMuted]);
 
   useImperativeHandle(ref, () => ({ start }), [start]);
 
@@ -72,6 +126,14 @@ const BackgroundMusic = forwardRef<BackgroundMusicHandle>(function BackgroundMus
     }
   };
 
+  const statusText = audioUnavailable
+    ? "Music unavailable"
+    : playbackBlocked
+      ? "Tap to play"
+      : isPlaying
+        ? "Music on"
+        : "Music off";
+
   return (
     <>
       <audio
@@ -82,16 +144,25 @@ const BackgroundMusic = forwardRef<BackgroundMusicHandle>(function BackgroundMus
         muted={isMuted}
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
-        onCanPlay={() => setAudioUnavailable(false)}
+        onCanPlay={() => {
+          setAudioUnavailable(false);
+          setPlaybackBlocked(false);
+        }}
         onError={(event) => {
           const audio = event.currentTarget;
           console.error("Background music file could not be loaded:", {
             source: audio.currentSrc || MUSIC_PATH,
             code: audio.error?.code,
             message: audio.error?.message,
-            expectedPath: `public${MUSIC_PATH}`,
+            expectedPath: EXPECTED_PUBLIC_PATH,
           });
+          if (fadeTimerRef.current !== null) {
+            window.clearInterval(fadeTimerRef.current);
+            fadeTimerRef.current = null;
+          }
+          startPendingRef.current = false;
           setAudioUnavailable(true);
+          setPlaybackBlocked(false);
           setIsPlaying(false);
         }}
       />
@@ -107,11 +178,7 @@ const BackgroundMusic = forwardRef<BackgroundMusicHandle>(function BackgroundMus
             <i />
           </span>
           <span className="background-music-status" aria-live="polite">
-            {audioUnavailable
-              ? "Add your music file"
-              : isPlaying
-                ? "Music on"
-                : "Music off"}
+            {statusText}
           </span>
           <button
             type="button"
@@ -121,7 +188,7 @@ const BackgroundMusic = forwardRef<BackgroundMusicHandle>(function BackgroundMus
             aria-label={isPlaying ? "Pause background music" : "Play background music"}
             title={
               audioUnavailable
-                ? `Place your audio file at public${MUSIC_PATH}`
+                ? `Place your audio file at ${EXPECTED_PUBLIC_PATH}`
                 : isPlaying
                   ? "Pause music"
                   : "Play music"

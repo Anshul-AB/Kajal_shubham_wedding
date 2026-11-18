@@ -5,6 +5,9 @@ import {
   useScroll,
   useSpring,
 } from "framer-motion";
+import { CalendarDays, Clock3, MapPin } from "lucide-react";
+import CouplePhoto from "../components/CouplePhoto";
+import ScratchCard from "../components/ScratchCard";
 import { weddingDetails, type WeddingEvent } from "../config/weddingDetails";
 import { weddingTheme } from "../config/weddingTheme";
 import "./EventExperience.css";
@@ -38,7 +41,7 @@ const celebrationStyles: Record<CelebrationId, CelebrationStyle> = {
     accent: weddingTheme.colors.deepPlum,
     highlight: weddingTheme.colors.gold,
     mood: "cocktail",
-    gesture: "TAP TO MAKE IT SPARKLE",
+    gesture: "TAP ANYWHERE TO CELEBRATE",
   },
   haldi: {
     eyebrow: "SUNSHINE, FLOWERS & JOY",
@@ -46,7 +49,7 @@ const celebrationStyles: Record<CelebrationId, CelebrationStyle> = {
     accent: weddingTheme.colors.haldi,
     highlight: weddingTheme.colors.ivory,
     mood: "haldi",
-    gesture: "TAP ANYWHERE TO ADD A SPLASH OF HALDI",
+    gesture: "TAP ANYWHERE TO CELEBRATE",
   },
   mehendi: {
     eyebrow: "A GARDEN OF BLESSINGS",
@@ -54,7 +57,7 @@ const celebrationStyles: Record<CelebrationId, CelebrationStyle> = {
     accent: weddingTheme.colors.mehendi,
     highlight: weddingTheme.colors.dustyRose,
     mood: "mehendi",
-    gesture: "TOUCH AND DRAW YOUR MEHENDI PATTERN",
+    gesture: "TAP ANYWHERE FOR FLOWERS",
   },
   wedding: {
     eyebrow: "THE GRAND CELEBRATION",
@@ -62,14 +65,14 @@ const celebrationStyles: Record<CelebrationId, CelebrationStyle> = {
     accent: weddingTheme.colors.deepPlum,
     highlight: weddingTheme.colors.gold,
     mood: "wedding",
-    gesture: "TAP TO CELEBRATE",
+    gesture: "TAP TO REVEAL THE WEDDING DATE",
   },
 };
 
 const eventDetails = weddingDetails.events;
 
 function formatWeddingDate(date: string) {
-  const parsedDate = new Date(`${date}T00:00:00Z`);
+  const parsedDate = parseEventDate(date);
   if (Number.isNaN(parsedDate.getTime())) return date;
 
   return new Intl.DateTimeFormat("en-GB", {
@@ -78,6 +81,31 @@ function formatWeddingDate(date: string) {
     year: "numeric",
     timeZone: "UTC",
   }).format(parsedDate);
+}
+
+function parseEventDate(date: string) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(date)
+    ? new Date(`${date}T00:00:00Z`)
+    : new Date(date);
+}
+
+function getEventDateParts(date?: string) {
+  if (!date) return undefined;
+  const parsedDate = parseEventDate(date);
+  if (Number.isNaN(parsedDate.getTime())) return { date, weekday: "" };
+
+  return {
+    date: new Intl.DateTimeFormat("en-GB", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      timeZone: "UTC",
+    }).format(parsedDate),
+    weekday: new Intl.DateTimeFormat("en-GB", {
+      weekday: "long",
+      timeZone: "UTC",
+    }).format(parsedDate),
+  };
 }
 
 function FlowerMark({
@@ -194,7 +222,9 @@ function Burst({
 function HennaCanvas({ enabled }: { enabled: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawingRef = useRef(false);
+  const activePointerIdRef = useRef<number | null>(null);
   const previousPointRef = useRef<{ x: number; y: number } | null>(null);
+  const lastMotifPointRef = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -216,15 +246,40 @@ function HennaCanvas({ enabled }: { enabled: boolean }) {
     return () => observer.disconnect();
   }, []);
 
+  const stopDrawing = (event: React.PointerEvent<HTMLCanvasElement>) => {
+    if (activePointerIdRef.current !== event.pointerId) return;
+    drawingRef.current = false;
+    activePointerIdRef.current = null;
+    previousPointRef.current = null;
+    lastMotifPointRef.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  };
+
   const draw = (event: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!drawingRef.current) return;
+    if (!enabled || !drawingRef.current) return;
     const canvas = canvasRef.current;
     const context = canvas?.getContext("2d");
-    const previousPoint = previousPointRef.current;
-    if (!canvas || !context || !previousPoint) return;
+    if (!canvas || !context) return;
 
     const bounds = canvas.getBoundingClientRect();
     const point = { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
+    if (
+      point.x < 0 ||
+      point.y < 0 ||
+      point.x > bounds.width ||
+      point.y > bounds.height
+    ) {
+      previousPointRef.current = null;
+      return;
+    }
+    const previousPoint = previousPointRef.current;
+    if (!previousPoint) {
+      previousPointRef.current = point;
+      return;
+    }
+
     context.beginPath();
     context.moveTo(previousPoint.x, previousPoint.y);
     context.quadraticCurveTo(
@@ -239,6 +294,26 @@ function HennaCanvas({ enabled }: { enabled: boolean }) {
     context.shadowColor = "rgba(228, 199, 144, 0.38)";
     context.shadowBlur = 7;
     context.stroke();
+    const lastMotifPoint = lastMotifPointRef.current;
+    if (
+      !lastMotifPoint ||
+      Math.hypot(point.x - lastMotifPoint.x, point.y - lastMotifPoint.y) > 24
+    ) {
+      const angle = Math.atan2(point.y - previousPoint.y, point.x - previousPoint.x);
+      context.save();
+      context.translate(point.x, point.y);
+      context.rotate(angle);
+      context.strokeStyle = "rgba(237, 211, 170, 0.8)";
+      context.lineWidth = 1;
+      context.shadowBlur = 3;
+      [-1, 1].forEach((side) => {
+        context.beginPath();
+        context.ellipse(0, side * 4, 2, 4, 0, 0, Math.PI * 2);
+        context.stroke();
+      });
+      context.restore();
+      lastMotifPointRef.current = point;
+    }
     previousPointRef.current = point;
   };
 
@@ -248,22 +323,38 @@ function HennaCanvas({ enabled }: { enabled: boolean }) {
       className={`henna-canvas${enabled ? " is-drawing-enabled" : ""}`}
       aria-label="Draw a henna-inspired pattern"
       onPointerDown={(event) => {
+        if (!enabled) return;
         event.currentTarget.setPointerCapture(event.pointerId);
         const bounds = event.currentTarget.getBoundingClientRect();
         previousPointRef.current = {
           x: event.clientX - bounds.left,
           y: event.clientY - bounds.top,
         };
+        lastMotifPointRef.current = null;
+        activePointerIdRef.current = event.pointerId;
+        const context = event.currentTarget.getContext("2d");
+        if (context) {
+          context.beginPath();
+          context.arc(
+            event.clientX - bounds.left,
+            event.clientY - bounds.top,
+            1.5,
+            0,
+            Math.PI * 2,
+          );
+          context.fillStyle = "rgba(228, 199, 144, 0.82)";
+          context.fill();
+        }
         drawingRef.current = true;
       }}
       onPointerMove={draw}
-      onPointerUp={() => {
+      onPointerUp={stopDrawing}
+      onPointerCancel={stopDrawing}
+      onLostPointerCapture={() => {
         drawingRef.current = false;
+        activePointerIdRef.current = null;
         previousPointRef.current = null;
-      }}
-      onPointerCancel={() => {
-        drawingRef.current = false;
-        previousPointRef.current = null;
+        lastMotifPointRef.current = null;
       }}
     />
   );
@@ -277,7 +368,7 @@ function CelebrationSection({
 }: {
   event: WeddingEvent;
   nextEvent?: WeddingEvent;
-  onNavigate: (id: CelebrationId) => void;
+  onNavigate: (id: string) => void;
   isActive: boolean;
 }) {
   const sectionRef = useRef<HTMLElement>(null);
@@ -285,10 +376,15 @@ function CelebrationSection({
   const [bursts, setBursts] = useState<BurstParticle[]>([]);
   const [drawingEnabled, setDrawingEnabled] = useState(false);
   const [canvasVersion, setCanvasVersion] = useState(0);
+  const [detailsRevealed, setDetailsRevealed] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
   const style = celebrationStyles[event.id];
   const isWedding = event.id === "wedding";
   const isHaldi = event.id === "haldi";
   const isMehendi = event.id === "mehendi";
+  const weddingDate = weddingDetails.weddingDate
+    ? formatWeddingDate(weddingDetails.weddingDate)
+    : "";
 
   const removeBurst = useCallback((id: number) => {
     setBursts((current) => current.filter((particle) => particle.id !== id));
@@ -325,23 +421,6 @@ function CelebrationSection({
     [],
   );
 
-  const handlePointerDown = (pointerEvent: React.PointerEvent<HTMLElement>) => {
-    if (isHaldi) {
-      releaseBurst(pointerEvent.clientX, pointerEvent.clientY, "splash", 5);
-      releaseBurst(pointerEvent.clientX, pointerEvent.clientY, "marigold", 14);
-    } else if (
-      event.id === "cocktail" &&
-      !(pointerEvent.target as HTMLElement).closest("button")
-    ) {
-      releaseBurst(pointerEvent.clientX, pointerEvent.clientY, "sparkle", 22);
-    } else if (
-      isMehendi &&
-      !(pointerEvent.target as HTMLElement).closest("button")
-    ) {
-      releaseBurst(pointerEvent.clientX, pointerEvent.clientY, "petal", 9);
-    }
-  };
-
   const handlePointerMove = (event: React.PointerEvent<HTMLElement>) => {
     const bounds = event.currentTarget.getBoundingClientRect();
     event.currentTarget.style.setProperty(
@@ -354,18 +433,59 @@ function CelebrationSection({
     );
   };
 
+  const revealEventDetails = (clientX: number, clientY: number) => {
+    setDetailsRevealed(true);
+    setHasInteracted(true);
+    if (event.id === "cocktail") {
+      releaseBurst(clientX, clientY, "sparkle", 28);
+    } else if (isHaldi) {
+      releaseBurst(clientX, clientY, "petal", 16);
+      releaseBurst(clientX, clientY, "marigold", 18);
+    } else if (isMehendi) {
+      releaseBurst(clientX, clientY, "petal", 20);
+    }
+  };
+
+  const revealWeddingDate = (clientX?: number, clientY?: number) => {
+    const bounds = sectionRef.current?.getBoundingClientRect();
+    const x = clientX ?? (bounds ? bounds.left + bounds.width / 2 : 0);
+    const y = clientY ?? (bounds ? bounds.top + bounds.height / 2 : 0);
+    setDetailsRevealed(true);
+    setHasInteracted(true);
+    releaseBurst(x, y, "petal", 36);
+    releaseBurst(x, y, "sparkle", 42);
+  };
+
+  const handleSectionClick = (event: React.MouseEvent<HTMLElement>) => {
+    if (!isWedding) {
+      revealEventDetails(event.clientX, event.clientY);
+    }
+  };
+
   const destination = weddingDetails.venue;
-  const weddingDate =
-    isWedding && weddingDetails.weddingDate
-      ? formatWeddingDate(weddingDetails.weddingDate)
-      : event.date;
+  const eventDate = (isWedding ? weddingDetails.weddingDate : event.date)?.trim();
+  const eventDateParts = getEventDateParts(eventDate);
+  const eventTime = event.time?.trim();
   const weddingLocation = isWedding
     ? `${destination.name}, ${destination.city}, ${destination.state}, ${destination.country}`
-    : event.location;
-  const details = [
-    ...(weddingDate ? [{ label: "Date", value: weddingDate }] : []),
-    ...(event.time ? [{ label: "Time", value: event.time }] : []),
-    ...(weddingLocation ? [{ label: "Place", value: weddingLocation }] : []),
+    : event.location?.trim();
+  const eventDetailsRows = [
+    {
+      label: "Date",
+      value: eventDateParts?.date ?? "Date to be announced",
+      secondary: eventDateParts?.weekday ?? "Day to be announced",
+      icon: CalendarDays,
+    },
+    {
+      label: "Time",
+      value: eventTime || "Time to be announced",
+      icon: Clock3,
+    },
+    {
+      label: "Venue",
+      value: weddingLocation || "Venue to be announced",
+      icon: MapPin,
+    },
   ];
 
   return (
@@ -382,8 +502,8 @@ function CelebrationSection({
         } as React.CSSProperties
       }
       aria-labelledby={`${event.id}-title`}
-      onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
+      onClick={handleSectionClick}
     >
       <div className="event-ambience" aria-hidden="true">
         <div className="event-ambient-glow" />
@@ -445,7 +565,6 @@ function CelebrationSection({
               />
             ))}
           </div>
-          <HennaCanvas key={canvasVersion} enabled={drawingEnabled} />
         </>
       )}
 
@@ -492,13 +611,10 @@ function CelebrationSection({
           <motion.h1
             id="wedding-title"
             className="event-title event-title--wedding"
-            initial={{ opacity: 0, clipPath: "inset(0 100% 0 0)" }}
-            animate={
-              isActive
-                ? { opacity: 1, clipPath: "inset(0 0% 0 0)" }
-                : { opacity: 0, clipPath: "inset(0 100% 0 0)" }
-            }
-            transition={{ duration: 1.8, ease: "easeInOut", delay: 0.25 }}
+            aria-label={`${weddingDetails.bride} and ${weddingDetails.groom}`}
+            initial={{ opacity: 0, y: 22 }}
+            animate={isActive ? { opacity: 1, y: 0 } : { opacity: 0, y: 22 }}
+            transition={{ duration: 1.3, ease: [0.22, 1, 0.36, 1], delay: 0.25 }}
           >
             <span>{weddingDetails.bride}</span>
             <i>&amp;</i>
@@ -539,76 +655,77 @@ function CelebrationSection({
           {style.tagline}
         </motion.p>
 
+        <CouplePhoto
+          src={
+            isWedding
+              ? weddingDetails.photographs.wedding
+              : isHaldi
+                ? weddingDetails.photographs.haldi
+                : isMehendi
+                  ? weddingDetails.photographs.mehendi
+                  : weddingDetails.photographs.cocktail
+          }
+          label={`${weddingDetails.bride} & ${weddingDetails.groom} — ${event.name}`}
+          className={`event-couple-photo event-couple-photo--${event.id}`}
+        />
+
         <motion.div
-          className="event-details"
+          className={`event-details event-details--${event.id}${detailsRevealed ? " event-details--revealed" : ""}`}
           initial={{ opacity: 0, y: 15 }}
           animate={isActive ? { opacity: 1, y: 0 } : { opacity: 0, y: 15 }}
-          transition={{ duration: 0.9, delay: 0.9 }}
+          transition={{ duration: 0.9, delay: 0.55 }}
         >
-          {details.length > 0 ? (
-            details.map((detail) => (
-              <p className="event-detail" key={detail.label}>
-                <span>{detail.label}</span>
-                <strong>{detail.value}</strong>
-              </p>
-            ))
-          ) : (
-            <p className="event-detail event-detail--pending">
-              Celebration details to follow
+          {isWedding && !detailsRevealed ? (
+            <p className="event-detail-pending">
+              The date and venue await the grand reveal
             </p>
+          ) : (
+            eventDetailsRows.map(({ label, value, secondary, icon: Icon }) => (
+              <article className="event-detail" key={label}>
+                <Icon className="event-detail-icon" aria-hidden="true" />
+                <div className="event-detail-copy">
+                  <span>{label}</span>
+                  <strong>{value}</strong>
+                  {secondary && <small>{secondary}</small>}
+                </div>
+              </article>
+            ))
           )}
         </motion.div>
 
-        {event.id === "cocktail" && (
-          <motion.button
-            type="button"
-            className="event-action"
-            onClick={(eventClick) =>
-              releaseBurst(
-                eventClick.clientX,
-                eventClick.clientY,
-                "sparkle",
-                24,
-              )
-            }
-            initial={{ opacity: 0, y: 12 }}
-            animate={isActive ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
-            transition={{ duration: 0.8, delay: 1.1 }}
-          >
-            <span aria-hidden="true">✦</span> Tap to sparkle
-          </motion.button>
-        )}
-
         {isMehendi && (
-          <div className="event-actions">
-            <motion.button
-              type="button"
-              className="event-action"
-              aria-pressed={drawingEnabled}
-              onClick={() => setDrawingEnabled((enabled) => !enabled)}
-              initial={{ opacity: 0, y: 12 }}
-              animate={
-                isActive ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }
-              }
-              transition={{ duration: 0.8, delay: 1.1 }}
-            >
-              <span aria-hidden="true">✦</span>
-              {drawingEnabled ? "Finish your henna" : "Touch and draw"}
-            </motion.button>
-            <button
-              type="button"
-              className="event-action event-action--clear"
-              onClick={() => setCanvasVersion((version) => version + 1)}
-            >
-              Clear drawing
-            </button>
-          </div>
+          <>
+            <div className="henna-drawing-area">
+              <p className="henna-instructions">Touch to create your Mehendi design</p>
+              <HennaCanvas key={canvasVersion} enabled={drawingEnabled} />
+              <div className="henna-controls">
+                <button
+                  type="button"
+                  className="event-action henna-control"
+                  aria-pressed={drawingEnabled}
+                  onClick={() => setDrawingEnabled((enabled) => !enabled)}
+                >
+                  {drawingEnabled ? "Finish Drawing" : "Start Drawing"}
+                </button>
+                <button
+                  type="button"
+                  className="event-action event-action--clear henna-control"
+                  onClick={() => setCanvasVersion((version) => version + 1)}
+                >
+                  Clear Drawing
+                </button>
+              </div>
+            </div>
+            <p className="henna-scroll-hint">
+              <span aria-hidden="true">↓</span> Scroll down to continue
+            </p>
+          </>
         )}
 
         <motion.p
           className="event-gesture"
           initial={{ opacity: 0 }}
-          animate={isActive ? { opacity: 0.9 } : { opacity: 0 }}
+          animate={isActive && !hasInteracted ? { opacity: 0.9 } : { opacity: 0 }}
           transition={{ duration: 0.8, delay: 1.25 }}
         >
           <span className="event-gesture-pointer" aria-hidden="true">
@@ -617,43 +734,41 @@ function CelebrationSection({
           {style.gesture}
         </motion.p>
         {isWedding && (
-          <motion.button
-            type="button"
-            className="event-action event-action--finale"
-            initial={{ opacity: 0, y: 12 }}
-            animate={isActive ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
-            onClick={(eventClick) => {
-              releaseBurst(
-                eventClick.clientX,
-                eventClick.clientY,
-                "petal",
-                32,
-              );
-              releaseBurst(
-                eventClick.clientX,
-                eventClick.clientY,
-                "sparkle",
-                24,
-              );
-            }}
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.97 }}
-          >
-            <span aria-hidden="true">✦</span> Celebrate their forever
-          </motion.button>
+          <>
+            {!detailsRevealed && (
+              <ScratchCard
+                secret={weddingDate}
+                onReveal={() => revealWeddingDate()}
+              />
+            )}
+            <motion.button
+              type="button"
+              className="event-action event-action--finale"
+              initial={{ opacity: 0, y: 12 }}
+              animate={isActive ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 }}
+              onClick={(eventClick) =>
+                revealWeddingDate(eventClick.clientX, eventClick.clientY)
+              }
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              <span aria-hidden="true">✦</span>
+              {detailsRevealed ? "Celebrate their forever" : "Tap to reveal the wedding date"}
+            </motion.button>
+          </>
         )}
       </div>
 
-      {nextEvent && (
+      {(nextEvent || isWedding) && (
         <motion.button
           type="button"
           className="event-scroll-cue"
-          onClick={() => onNavigate(nextEvent.id)}
+          onClick={() => onNavigate(nextEvent?.id ?? "rsvp")}
           initial={{ opacity: 0 }}
           animate={isActive ? { opacity: 1 } : { opacity: 0 }}
           transition={{ duration: 0.8, delay: 1.5 }}
         >
-          <span>CONTINUE TO {nextEvent.name.toUpperCase()}</span>
+          <span>CONTINUE TO {(nextEvent?.name ?? "RSVP").toUpperCase()}</span>
           <i aria-hidden="true">↓</i>
         </motion.button>
       )}
@@ -707,7 +822,7 @@ export default function EventExperience() {
     };
   }, []);
 
-  const navigateToEvent = (id: CelebrationId) => {
+  const navigateToEvent = (id: string) => {
     document.getElementById(id)?.scrollIntoView({
       behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
         ? "auto"
