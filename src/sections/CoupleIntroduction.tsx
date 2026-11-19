@@ -7,18 +7,22 @@ function FamilyDedication({
   role,
   firstName,
   secondName,
+  photo,
+  photoLabel,
 }: {
   role: "Bride" | "Groom";
   firstName: string;
   secondName: string;
+  photo: string;
+  photoLabel: string;
 }) {
   const parentNames = [firstName, secondName].filter(Boolean);
 
   return (
     <article className="family-dedication">
       <CouplePhoto
-        src={weddingDetails.photographs.family}
-        label="Kajal and Shubham"
+        src={photo}
+        label={photoLabel}
         className="family-dedication-photo"
         showCaption={false}
       />
@@ -82,6 +86,8 @@ export default function CoupleIntroduction() {
           role="Bride"
           firstName={weddingDetails.families.bride.fatherName}
           secondName={weddingDetails.families.bride.motherName}
+          photo={weddingDetails.photographs.familyOne}
+          photoLabel="Bride's family portrait"
         />
         <span className="family-divider" aria-hidden="true">
           ❧
@@ -90,6 +96,8 @@ export default function CoupleIntroduction() {
           role="Groom"
           firstName={weddingDetails.families.groom.fatherName}
           secondName={weddingDetails.families.groom.motherName}
+          photo={weddingDetails.photographs.familyTwo}
+          photoLabel="Groom's family portrait"
         />
       </div>
     </section>

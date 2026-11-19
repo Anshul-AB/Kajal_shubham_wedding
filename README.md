@@ -29,7 +29,7 @@ Enter the parents' names in the `families` fields in
   Pathankot.
 - Mehendi — 24 November 2026 at 7:00 PM; Celebration Rooms and Banquet,
   Pathankot.
-- Wedding — 25 November 2026 at 8:00 PM; Tashan, Pathankot, Punjab, India.
+- Wedding — 25 November 2026 at 8:00 PM; Jashan, Pathankot, Punjab, India.
 
 Cocktail, Haldi and Mehendi details are visible in their event sections. The
 Wedding date and venue stay secret until the final Wedding reveal.

@@ -4,6 +4,7 @@ import KS_2 from "../assets/images/KS_2.jpeg";
 import KS_3 from "../assets/images/KS_3.jpeg";
 import KS_4 from "../assets/images/KS_4.jpeg";
 import KS_5 from "../assets/images/KS_5.jpeg";
+import KS_6 from "../assets/images/KS_6.jpeg";
 
 export type WeddingEventId = "cocktail" | "haldi" | "mehendi" | "wedding";
 
@@ -36,7 +37,8 @@ export const weddingDetails = {
     main: KS_1,
     fullLength: KS_4,
     romantic: KS_2,
-    family: KS_3,
+    familyOne: KS_6,
+    familyTwo: KS_5,
     cocktail: KS_5,
     haldi: KS_3,
     mehendi: KS_2,
@@ -44,7 +46,7 @@ export const weddingDetails = {
   },
 
   venue: {
-    name: "Tashan",
+    name: "Jashan",
     city: "Pathankot",
     state: "Punjab",
     country: "India",

@@ -267,8 +267,9 @@ export default function PalaceOpening({ onStartMusic }: PalaceOpeningProps) {
           >
             <CouplePhoto
               src={weddingDetails.photographs.romantic}
-              label="Kajal & Shubham — a romantic portrait"
+              label="Wedding couple portrait"
               className="palace-couple-photo"
+              showCaption={false}
             />
             <motion.h1
               className="couple-names"

@@ -456,8 +456,18 @@ function CelebrationSection({
     releaseBurst(x, y, "sparkle", 42);
   };
 
-  const handleSectionClick = (event: React.MouseEvent<HTMLElement>) => {
-    if (!isWedding) {
+  const handleSectionPointerDown = (event: React.PointerEvent<HTMLElement>) => {
+    const target = event.target;
+    if (
+      target instanceof Element &&
+      target.closest("button, canvas, input, a")
+    ) {
+      return;
+    }
+
+    if (isWedding) {
+      revealWeddingDate(event.clientX, event.clientY);
+    } else {
       revealEventDetails(event.clientX, event.clientY);
     }
   };
@@ -503,7 +513,7 @@ function CelebrationSection({
       }
       aria-labelledby={`${event.id}-title`}
       onPointerMove={handlePointerMove}
-      onClick={handleSectionClick}
+      onPointerDown={handleSectionPointerDown}
     >
       <div className="event-ambience" aria-hidden="true">
         <div className="event-ambient-glow" />
@@ -759,16 +769,16 @@ function CelebrationSection({
         )}
       </div>
 
-      {(nextEvent || isWedding) && (
+      {nextEvent && (
         <motion.button
           type="button"
           className="event-scroll-cue"
-          onClick={() => onNavigate(nextEvent?.id ?? "rsvp")}
+          onClick={() => onNavigate(nextEvent.id)}
           initial={{ opacity: 0 }}
           animate={isActive ? { opacity: 1 } : { opacity: 0 }}
           transition={{ duration: 0.8, delay: 1.5 }}
         >
-          <span>CONTINUE TO {(nextEvent?.name ?? "RSVP").toUpperCase()}</span>
+          <span>CONTINUE TO {nextEvent.name.toUpperCase()}</span>
           <i aria-hidden="true">↓</i>
         </motion.button>
       )}
