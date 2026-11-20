@@ -5,9 +5,9 @@ import KS_3 from "../assets/images/KS_3.jpeg";
 import KS_4 from "../assets/images/KS_4.jpeg";
 import KS_5 from "../assets/images/KS_5.jpeg";
 import KS_6 from "../assets/images/KS_6.jpeg";
-import KS_7 from "../assets/images/KS_7.jpeg";
-import KS_8 from "../assets/images/KS_8.jpeg";
-import KS_9 from "../assets/images/KS_9.jpeg";
+// import KS_7 from "../assets/images/KS_7.jpeg";
+// import KS_8 from "../assets/images/KS_8.jpeg";
+// import KS_9 from "../assets/images/KS_9.jpeg";
 
 export type WeddingEventId = "cocktail" | "haldi" | "mehendi" | "wedding";
 
@@ -38,13 +38,13 @@ export const weddingDetails = {
 
   photographs: {
     main: KS_1,
-    fullLength: KS_7,
+    fullLength: KS_3,
     romantic: KS_2,
-    familyOne: KS_6,
+    familyOne: KS_4,
     familyTwo: KS_5,
-    cocktail: KS_9,
+    cocktail: KS_1,
     haldi: KS_3,
-    mehendi: KS_8,
+    mehendi: KS_2,
     wedding: KS_4,
   },
 
