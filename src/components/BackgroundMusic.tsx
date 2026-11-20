@@ -217,7 +217,11 @@ const BackgroundMusic = forwardRef<BackgroundMusicHandle>(function BackgroundMus
                 <path d="M8 5v14M16 5v14" />
               </svg>
             ) : (
-              <svg viewBox="0 0 24 24" aria-hidden="true">
+              <svg
+                className="background-music-play-icon"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
                 <path d="m8 5 11 7-11 7z" />
               </svg>
             )}

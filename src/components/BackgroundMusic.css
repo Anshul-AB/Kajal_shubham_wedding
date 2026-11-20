@@ -100,7 +100,7 @@
   stroke-width: 1.5;
 }
 
-.background-music-button:first-of-type svg path:last-child {
+.background-music-play-icon path {
   fill: currentColor;
   stroke: none;
 }
