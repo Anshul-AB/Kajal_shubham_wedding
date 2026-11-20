@@ -4,7 +4,7 @@ import KS_2 from "../assets/images/KS_2.jpeg";
 import KS_3 from "../assets/images/KS_3.jpeg";
 import KS_4 from "../assets/images/KS_4.jpeg";
 import KS_5 from "../assets/images/KS_5.jpeg";
-import KS_6 from "../assets/images/KS_6.jpeg";
+// import KS_6 from "../assets/images/KS_6.jpeg";
 // import KS_7 from "../assets/images/KS_7.jpeg";
 // import KS_8 from "../assets/images/KS_8.jpeg";
 // import KS_9 from "../assets/images/KS_9.jpeg";
