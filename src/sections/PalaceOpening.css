@@ -381,10 +381,7 @@
   margin: 0;
   overflow: visible;
   padding: 0.18em 0.08em 0.28em;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0;
+  display: block;
   font-family: var(--font-names);
   font-size: clamp(65px, 12vw, 130px);
   font-weight: 400;
@@ -392,6 +389,11 @@
   overflow-wrap: anywhere;
   color: #faf5f0;
   text-shadow: 0 4px 25px rgba(0, 0, 0, 0.55);
+}
+
+.couple-name-character {
+  display: inline-block;
+  white-space: pre;
 }
 
 .couple-name {

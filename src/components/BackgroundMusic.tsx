@@ -6,13 +6,14 @@ import {
   useRef,
   useState,
 } from "react";
+import MUSIC_PATH from "../assets/audio/wedding-audio.mp3";
 import "./BackgroundMusic.css";
 
-const MUSIC_PATH = "/assets/audio/wedding%20audio.mp3";
-const EXPECTED_PUBLIC_PATH = "public/assets/audio/wedding audio.mp3";
+const EXPECTED_MUSIC_PATH = "src/assets/audio/wedding-audio.mp3";
 const MUTE_PREFERENCE_KEY = "wedding-music-muted";
 const BACKGROUND_MUSIC_VOLUME = 0.2;
 const FADE_IN_DURATION_MS = 3000;
+const MUSIC_START_OFFSET_SECONDS = 38;
 
 export type BackgroundMusicHandle = {
   start: () => void;
@@ -70,6 +71,15 @@ const BackgroundMusic = forwardRef<BackgroundMusicHandle>(function BackgroundMus
     }, 50);
   }, []);
 
+  const seekToStart = useCallback((audio: HTMLAudioElement) => {
+    if (
+      Number.isFinite(audio.duration) &&
+      audio.duration > MUSIC_START_OFFSET_SECONDS
+    ) {
+      audio.currentTime = MUSIC_START_OFFSET_SECONDS;
+    }
+  }, []);
+
   const start = useCallback(() => {
     setIsVisible(true);
     const audio = audioRef.current;
@@ -79,6 +89,7 @@ const BackgroundMusic = forwardRef<BackgroundMusicHandle>(function BackgroundMus
 
     const shouldFadeIn = !hasStartedRef.current;
     if (shouldFadeIn) audio.volume = 0;
+    seekToStart(audio);
     audio.muted = isMuted;
     startPendingRef.current = true;
     void audio
@@ -99,7 +110,7 @@ const BackgroundMusic = forwardRef<BackgroundMusicHandle>(function BackgroundMus
           error,
         });
       });
-  }, [audioUnavailable, fadeIn, isMuted]);
+  }, [audioUnavailable, fadeIn, isMuted, seekToStart]);
 
   useImperativeHandle(ref, () => ({ start }), [start]);
 
@@ -142,6 +153,13 @@ const BackgroundMusic = forwardRef<BackgroundMusicHandle>(function BackgroundMus
         loop
         preload="none"
         muted={isMuted}
+        onLoadedMetadata={(event) => seekToStart(event.currentTarget)}
+        onTimeUpdate={(event) => {
+          const audio = event.currentTarget;
+          if (!audio.paused && audio.currentTime < 0.1) {
+            seekToStart(audio);
+          }
+        }}
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
         onCanPlay={() => {
@@ -154,7 +172,7 @@ const BackgroundMusic = forwardRef<BackgroundMusicHandle>(function BackgroundMus
             source: audio.currentSrc || MUSIC_PATH,
             code: audio.error?.code,
             message: audio.error?.message,
-            expectedPath: EXPECTED_PUBLIC_PATH,
+            expectedPath: EXPECTED_MUSIC_PATH,
           });
           if (fadeTimerRef.current !== null) {
             window.clearInterval(fadeTimerRef.current);
@@ -188,7 +206,7 @@ const BackgroundMusic = forwardRef<BackgroundMusicHandle>(function BackgroundMus
             aria-label={isPlaying ? "Pause background music" : "Play background music"}
             title={
               audioUnavailable
-                ? `Place your audio file at ${EXPECTED_PUBLIC_PATH}`
+                ? `Place your audio file at ${EXPECTED_MUSIC_PATH}`
                 : isPlaying
                   ? "Pause music"
                   : "Play music"

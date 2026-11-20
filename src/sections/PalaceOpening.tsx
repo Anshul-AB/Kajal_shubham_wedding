@@ -66,6 +66,25 @@ type PalaceOpeningProps = {
   onStartMusic?: () => void;
 };
 
+const coupleNameVariants = {
+  hidden: { opacity: 0, y: 14 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.7,
+      ease: [0.22, 1, 0.36, 1] as const,
+      delayChildren: 0.2,
+      staggerChildren: 0.07,
+    },
+  },
+};
+
+const nameCharacterVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.06 } },
+};
+
 export default function PalaceOpening({ onStartMusic }: PalaceOpeningProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const namesRevealedRef = useRef(false);
@@ -76,6 +95,7 @@ export default function PalaceOpening({ onStartMusic }: PalaceOpeningProps) {
   const [hasScrolled, setHasScrolled] = useState(false);
   const [videoFinished, setVideoFinished] = useState(false);
   const [namesAnimationFinished, setNamesAnimationFinished] = useState(false);
+  const coupleNames = `${weddingDetails.bride} & ${weddingDetails.groom}`;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -273,16 +293,22 @@ export default function PalaceOpening({ onStartMusic }: PalaceOpeningProps) {
             />
             <motion.h1
               className="couple-names"
-              initial={{ opacity: 0, y: 14 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: 1.1,
-                ease: [0.22, 1, 0.36, 1],
-                delay: 0.2,
-              }}
+              aria-label={coupleNames}
+              initial="hidden"
+              animate="visible"
+              variants={coupleNameVariants}
               onAnimationComplete={() => setNamesAnimationFinished(true)}
             >
-              {weddingDetails.bride} & {weddingDetails.groom}
+              {Array.from(coupleNames).map((character, index) => (
+                <motion.span
+                  key={`${character}-${index}`}
+                  aria-hidden="true"
+                  variants={nameCharacterVariants}
+                  className="couple-name-character"
+                >
+                  {character}
+                </motion.span>
+              ))}
             </motion.h1>
           </motion.div>
         )}
